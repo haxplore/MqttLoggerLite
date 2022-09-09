@@ -1,0 +1,12 @@
+﻿{
+  "profiles": {
+    "MqttLoggerLite": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MQTT_SERVER": "127.0.0.1",
+        "MQTT_TOPIC": "tele/tasmota/SENSOR",
+        "LITEDB_FILE": "C:\\projects\\tasmota.db"
+      }
+    }
+  }
+}

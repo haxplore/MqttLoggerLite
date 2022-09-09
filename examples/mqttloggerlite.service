@@ -1,0 +1,18 @@
+# put this in /lib/systemd/system
+
+[Unit]
+Description=Mqtt Logger App
+
+[Service]
+Type=notify
+User=pi
+ExecStart=/home/pi/apps/mqttloggerlite/MqttLoggerLite
+WorkingDirectory=/home/pi/apps/mqttloggerlite
+Restart=always
+Environment="DOTNET_ROOT=/opt/dotnet"
+Environment=MQTT_SERVER=127.0.0.1
+Environment=MQTT_TOPIC=tele/tasmota/SENSOR
+Environment=LITEDB_FILE=/home/pi/apps/mqttloggerlite/tasmota.db
+
+[Install]
+WantedBy=multi-user.target
