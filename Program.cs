@@ -2,10 +2,20 @@
 using Microsoft.Extensions.Hosting;
 using MqttLoggerLite;
 
-Console.WriteLine("Starting up..");
+Console.WriteLine("** Starting up..");
+
+var cts = new CancellationTokenSource();
+
+// clean up when stopped by systemd
+AppDomain.CurrentDomain.ProcessExit += (s, e) =>
+{
+    Console.WriteLine("** Process SIGTERM..");
+    cts.Cancel();
+};
+
 
 IHost host = Host.CreateDefaultBuilder(args)
-    .UseSystemd()
+    .UseSystemd() // runnin on Linux with systemd
     .ConfigureServices(services =>
     {
         services.AddHostedService<MqttWorker>();
@@ -14,4 +24,4 @@ IHost host = Host.CreateDefaultBuilder(args)
 
 await host.RunAsync();
 
-Console.WriteLine("The end..");
+Console.WriteLine("** The end..");
