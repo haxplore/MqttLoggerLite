@@ -1,9 +1,9 @@
 # MqttLoggerLite
 
-This application saves MQTT messages coming from a Sonoff POW (flashed with Tasmota) in a simple DB.
+This application saves MQTT messages coming from a Sonoff POW (flashed with Tasmota) in MongoDB.
 
 ## Background
-Just wanted to know how much electricity is being used by different devices around the house.
+Just wanted to know how much electricity is being used by different devices around the house, and see the profile of usage.
 
 ## The device
 [Tasmota](https://tasmota.github.io/docs/) is an awesome firmware developed for 'smart' devices, including power meters. I happened to have an old [Sonoff POW](https://templates.blakadder.com/sonoff_Pow.html). It will send (publish) readings every 5 mins to an MQTT broker. The message looks like this:
@@ -27,12 +27,15 @@ Just wanted to know how much electricity is being used by different devices arou
 ```
 
 ## The MQTT server
-Nothing complicated, just running *mosquitto broker* on a Raspberry Pi.
+Nothing complicated, just running *mosquitto broker* on a Linux server.
 
 ## The application
-The application runs on the same Rpi as it has plenty of resources available, so why not. Developed in dotnet 6 for fun. The messages could be stored in any DB or even as files, but LiteDB provides plenty of features and simplicity for this use case. Plus, I never tried it before and it's fun to play with new stuff. :)
+The application runs on the same server as it has plenty of resources available, so why not. Developed in dotnet for fun. The messages could be stored in any DB or even as files, but wanna play with MongoDB.
 
 It's running as background service. See the [examples](examples) folder for more info.
+
+## Changes
+Nov 2023 - Moving away from Raspberry Pi for now, see how it works on a Linux box, should still work, but not tested.
 
 ## Disclaimer
 This is not production ready code, not even close. It was created for fun and for a specific use case and most likely full of bugs. ;)

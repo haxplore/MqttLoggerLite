@@ -3,16 +3,16 @@ using Microsoft.Extensions.Logging;
 using MQTTnet.Client;
 using MQTTnet;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using LiteDB;
+using MongoDB.Driver;
 
 namespace MqttLoggerLite
 {
     public class MqttWorker : BackgroundService, IDisposable
     {
         // don't want to write every single time, but rather cache for a time
-        const int DELAYMINUTES = 120;
+        // reading are coming in every 15min, use a bigger number if want to cache readings on RPi
+        const int DELAYMINUTES = 10;
 
         private readonly ILogger<MqttWorker> _logger;
         IMqttClient? _mqttClient;
@@ -41,12 +41,13 @@ namespace MqttLoggerLite
             {
                 MqttServer = Environment.GetEnvironmentVariable("MQTT_SERVER"),
                 MqttTopic = Environment.GetEnvironmentVariable("MQTT_TOPIC"),
-                LiteDbFile = Environment.GetEnvironmentVariable("LITEDB_FILE")
+                MongoDbServer = Environment.GetEnvironmentVariable("MONGODB_SERVER"),
+                MongoDbCollection = Environment.GetEnvironmentVariable("MONGODB_COLLECTION")
             };
 
             if (!_workerSettings.Validate())
             {
-                Console.WriteLine("Environment variables missing");
+                Console.WriteLine("** Environment variables missing");
                 Environment.Exit(1);
             }
         }
@@ -80,9 +81,13 @@ namespace MqttLoggerLite
             _logger.LogInformation("Received application message.");
 
             var payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-            var obj = System.Text.Json.JsonSerializer.Deserialize<TasmotaSensor>(payload);
-            SaveObject(obj);
-            _logger.LogInformation(payload);
+            var obj = JsonSerializer.Deserialize<TasmotaSensor>(payload);
+            
+            if (obj != null)
+            {
+                SaveObject(obj);
+                _logger.LogInformation(payload);
+            }
 
             return Task.CompletedTask;
         }
@@ -113,15 +118,11 @@ namespace MqttLoggerLite
         {
             if (Readings.Count < 1) return;
 
-            using (var db = new LiteDatabase(_workerSettings.LiteDbFile))
-            {
-                var col = db.GetCollection<TasmotaSensor>("tasmota");
-                foreach (var item in Readings)
-                {
-                    col.Insert(item);
-                }
-                col.EnsureIndex(x => x.Time);
-            }
+            var client = new MongoClient(_workerSettings.MongoDbServer);
+
+            var collection = client.GetDatabase(_workerSettings.MongoDbCollection).GetCollection<TasmotaSensor>("tasmota");
+
+            collection.InsertMany(Readings);
         }
 
         #region IDisposable
