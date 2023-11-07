@@ -10,46 +10,16 @@ namespace MqttLoggerLite
 {
     public class MqttWorker : BackgroundService, IDisposable
     {
-        // don't want to write every single time, but rather cache for a time
-        // reading are coming in every 15min, use a bigger number if want to cache readings on RPi
-        const int DELAYMINUTES = 10;
-
         private readonly ILogger<MqttWorker> _logger;
         IMqttClient? _mqttClient;
+        
         WorkerSettings _workerSettings;
+        public WorkerSettings settings { get { return _workerSettings; } set { _workerSettings = value; } }
 
-        private static DateTime? _lastWrite;
-        private DateTime LastWrite
-        {
-            // if no writes yet, trigger a write
-            get => _lastWrite ??= DateTime.Now.AddMinutes(-(DELAYMINUTES + 1));
-            set { _lastWrite = value; }
-        }
-
-        private static List<TasmotaSensor>? _readings;
-        private List<TasmotaSensor> Readings
-        {
-            get => _readings ??= new List<TasmotaSensor>();
-            set { _readings = value; }
-        }
-
-        public MqttWorker(ILogger<MqttWorker> logger)
+        public MqttWorker(ILogger<MqttWorker> logger, WorkerSettings ws)
         {
             _logger = logger;
-
-            _workerSettings = new()
-            {
-                MqttServer = Environment.GetEnvironmentVariable("MQTT_SERVER"),
-                MqttTopic = Environment.GetEnvironmentVariable("MQTT_TOPIC"),
-                MongoDbServer = Environment.GetEnvironmentVariable("MONGODB_SERVER"),
-                MongoDbCollection = Environment.GetEnvironmentVariable("MONGODB_COLLECTION")
-            };
-
-            if (!_workerSettings.Validate())
-            {
-                Console.WriteLine("** Environment variables missing");
-                Environment.Exit(1);
-            }
+            _workerSettings = ws;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -94,35 +64,12 @@ namespace MqttLoggerLite
 
         private void SaveObject(TasmotaSensor data)
         {
-            // add the latest reading first
-            Readings.Add(data);
-
-            if (DateTime.Now.Subtract(LastWrite).TotalMinutes > DELAYMINUTES)
-            {
-                _logger.LogInformation("Time to write");
-                // also save the latest reading
-                LastWrite = DateTime.Now;
-
-                WriteObjects();
-
-                // clean-up cache
-                Readings.Clear();
-            }
-            else
-            {
-                _logger.LogInformation($"No write yet. LastWrite={LastWrite}");
-            }
-        }
-
-        private void WriteObjects()
-        {
-            if (Readings.Count < 1) return;
-
+            // add the latest reading
             var client = new MongoClient(_workerSettings.MongoDbServer);
 
             var collection = client.GetDatabase(_workerSettings.MongoDbCollection).GetCollection<TasmotaSensor>("tasmota");
 
-            collection.InsertMany(Readings);
+            collection.InsertOne(data);
         }
 
         #region IDisposable
@@ -134,7 +81,7 @@ namespace MqttLoggerLite
 
         protected virtual void Dispose(bool disposing)
         {
-            WriteObjects();
+            
         }
         #endregion
     }
