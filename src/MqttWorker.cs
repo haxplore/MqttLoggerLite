@@ -51,12 +51,13 @@ namespace MqttLoggerLite
             _logger.LogInformation("Received application message.");
 
             var payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+            _logger.LogInformation(payload);
+
             var obj = JsonSerializer.Deserialize<TasmotaSensor>(payload);
             
             if (obj != null)
             {
                 SaveObject(obj);
-                _logger.LogInformation(payload);
             }
 
             return Task.CompletedTask;
@@ -64,10 +65,12 @@ namespace MqttLoggerLite
 
         private void SaveObject(TasmotaSensor data)
         {
+            _logger.LogInformation("Saving reading");
+
             // add the latest reading
             var client = new MongoClient(_workerSettings.MongoDbServer);
 
-            var collection = client.GetDatabase(_workerSettings.MongoDbCollection).GetCollection<TasmotaSensor>("tasmota");
+            var collection = client.GetDatabase(_workerSettings.MongoDbDatabase).GetCollection<TasmotaSensor>("tasmota");
 
             collection.InsertOne(data);
         }
