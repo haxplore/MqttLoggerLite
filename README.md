@@ -35,8 +35,8 @@ The application runs on the same server as it has plenty of resources available,
 It's running as background service. See the [examples](examples) folder for more info.
 
 ## Changes
-Mar 2025 - It has been running fine since the last update without missing a beat. Just updated the dotnet version and dependencies.
-Nov 2023 - Moving away from Raspberry Pi for now, see how it works on a Linux box, should still work, but not tested.
+- Mar 2025: It has been running fine since the last update without missing a beat. Just updated the dotnet version and dependencies.
+- Nov 2023: Moving away from Raspberry Pi for now, see how it works on a Linux box, should still work, but not tested.
 
 ## Disclaimer
 This is not production ready code, not even close. It was created for fun and for a specific use case and most likely full of bugs. ;)
